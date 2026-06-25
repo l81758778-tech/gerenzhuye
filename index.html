@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>影像作品 | 个人博客</title>
+    <meta
+      name="description"
+      content="个人博客作品栏，展示图片制作、视频制作、动态图形和后期合成作品。"
+    >
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="texture-layer" aria-hidden="true"></div>
+    <div class="gradual-blur gradual-blur-top" aria-hidden="true"></div>
+    <div class="gradual-blur gradual-blur-bottom" aria-hidden="true"></div>
+
+    <a class="skip-link" href="#works">跳到作品列表</a>
+
+    <header class="site-header reveal">
+      <a class="brand" href="#" aria-label="个人博客首页">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>个人博客</span>
+      </a>
+      <nav class="site-nav" aria-label="主导航">
+        <a href="#works" aria-current="page">作品</a>
+        <a href="#recent">最近发文</a>
+        <a href="#about">关于</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="intro reveal" aria-labelledby="page-title">
+        <div class="intro-copy">
+          <p class="eyebrow">Works / Image & Motion</p>
+          <h1 id="page-title">影像作品</h1>
+          <p class="intro-text">
+            收录图片制作、视频剪辑、动态图形和后期合成练习。页面先以示例内容搭建，
+            之后可以直接替换为真实作品素材。
+          </p>
+        </div>
+        <dl class="intro-stats" aria-label="作品概览">
+          <div>
+            <dt>08</dt>
+            <dd>精选作品</dd>
+          </div>
+          <div>
+            <dt>04</dt>
+            <dd>创作方向</dd>
+          </div>
+          <div>
+            <dt>2026</dt>
+            <dd>持续更新</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="work-section reveal" aria-labelledby="work-section-title">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Portfolio</p>
+            <h2 id="work-section-title">作品栏</h2>
+          </div>
+          <p id="result-count" class="result-count" aria-live="polite"></p>
+        </div>
+
+        <div class="filter-bar" id="filters" aria-label="作品分类"></div>
+
+        <div class="works-grid" id="works" aria-label="作品列表"></div>
+      </section>
+
+      <section class="journal-preview reveal" id="recent" aria-labelledby="recent-title">
+        <p class="section-kicker">Journal</p>
+        <h2 id="recent-title">最近发文</h2>
+        <p>这里预留给博客文章更新。后续可以接入 Markdown、静态文章列表或 CMS。</p>
+      </section>
+    </main>
+
+    <footer class="site-footer reveal" id="about">
+      <p>© 2026 个人博客</p>
+      <p>Image, motion, notes, and process.</p>
+    </footer>
+
+    <div
+      class="lightbox"
+      id="lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lightbox-title"
+      hidden
+    >
+      <button class="icon-button lightbox-close" type="button" aria-label="关闭预览">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      <button class="icon-button lightbox-nav lightbox-prev" type="button" aria-label="上一件作品">
+        <span aria-hidden="true">&#8249;</span>
+      </button>
+      <button class="icon-button lightbox-nav lightbox-next" type="button" aria-label="下一件作品">
+        <span aria-hidden="true">&#8250;</span>
+      </button>
+
+      <div class="lightbox-panel" role="document">
+        <div class="lightbox-media" id="lightbox-media"></div>
+        <aside class="lightbox-details">
+          <p class="lightbox-meta" id="lightbox-meta"></p>
+          <h2 id="lightbox-title"></h2>
+          <p id="lightbox-description"></p>
+          <ul class="tag-list" id="lightbox-tags" aria-label="作品标签"></ul>
+        </aside>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
