@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#050505">
+    <title>个人博客 | 创作笔记</title>
+    <meta name="description" content="关于图像、剪辑、动态和后期过程的个人创作笔记。">
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="stylesheet" href="styles.css?v=20260630c">
+  </head>
+  <body class="intro-complete blog-page">
+    <a class="skip-link" href="#notes">跳到文章列表</a>
+
+    <canvas class="light-field" id="blog-light-canvas" aria-hidden="true"></canvas>
+    <div class="light-fallback" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="film-grain" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="index.html#gallery" aria-label="返回影像作品首页">
+        <span>IMAGE / MOTION</span>
+      </a>
+      <nav class="site-nav" aria-label="主导航">
+        <a href="index.html#gallery">画廊</a>
+        <a href="index.html#archive">作品索引</a>
+        <a href="blog.html" aria-current="page">个人博客</a>
+      </nav>
+      <a class="replay-button header-return" href="index.html#gallery">返回画廊</a>
+    </header>
+
+    <main class="journal-shell" id="notes">
+      <aside class="journal-profile" aria-labelledby="journal-title">
+        <p class="section-kicker">Journal / Process</p>
+        <h1 id="journal-title">创作<br>笔记。</h1>
+        <p class="journal-intro">关于图像、剪辑、动态和后期过程的记录。</p>
+        <dl class="journal-profile-meta">
+          <div><dt>持续记录</dt><dd>2026—</dd></div>
+          <div><dt>更新方向</dt><dd>影像 / 过程</dd></div>
+        </dl>
+      </aside>
+
+      <section class="journal-index" aria-labelledby="notes-title">
+        <div class="journal-toolbar">
+          <div>
+            <p class="section-kicker">Latest notes</p>
+            <h2 id="notes-title">近期笔记</h2>
+          </div>
+          <p class="blog-result" id="blog-result" aria-live="polite">06 篇笔记</p>
+        </div>
+
+        <div class="blog-filters" id="blog-filters" aria-label="笔记分类">
+          <button type="button" class="filter-button" data-blog-filter="全部" aria-pressed="true">全部</button>
+          <button type="button" class="filter-button" data-blog-filter="图像" aria-pressed="false">图像</button>
+          <button type="button" class="filter-button" data-blog-filter="剪辑" aria-pressed="false">剪辑</button>
+          <button type="button" class="filter-button" data-blog-filter="动态" aria-pressed="false">动态</button>
+          <button type="button" class="filter-button" data-blog-filter="后期" aria-pressed="false">后期</button>
+        </div>
+
+        <div class="journal-card-grid" id="blog-notes-grid" aria-live="polite"></div>
+      </section>
+
+      <aside class="journal-stats" aria-label="博客统计与分类">
+        <section>
+          <p class="section-kicker">Index</p>
+          <h2>日志索引</h2>
+          <dl class="journal-stat-list">
+            <div><dt>文章</dt><dd id="stat-articles">06</dd></div>
+            <div><dt>分类</dt><dd id="stat-categories">04</dd></div>
+            <div><dt>主题</dt><dd id="stat-tags">18</dd></div>
+          </dl>
+        </section>
+        <section class="journal-category-list" aria-labelledby="category-title">
+          <p class="section-kicker">Categories</p>
+          <h2 id="category-title">分类</h2>
+          <div id="category-counts"></div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="blog-about journal-about" aria-labelledby="blog-about-title">
+      <p class="section-kicker">About this journal</p>
+      <h2 id="blog-about-title">从作品之后，<br>回到过程之中。</h2>
+      <p>这里持续收录影像练习背后的判断、失败、方法和偶然发现。</p>
+    </section>
+
+    <footer class="site-footer">
+      <div>
+        <p class="footer-title">个人博客</p>
+        <p>Image, motion, notes, and process.</p>
+      </div>
+      <p>© 2026</p>
+    </footer>
+
+    <script src="journal-shared.js?v=20260630b"></script>
+    <script src="blog.js?v=20260630b"></script>
+  </body>
+</html>
