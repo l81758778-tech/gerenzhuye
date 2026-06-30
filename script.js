@@ -107,8 +107,21 @@ const works = [
   }
 ];
 
+const galleryLayouts = [
+  { x: 1, y: 7, w: 23, h: 43, r: -2.5, tiltX: 2, tiltY: 8, cut: 7, depth: 3 },
+  { x: 76, y: 6, w: 21, h: 35, r: 1.8, tiltX: -1, tiltY: -8, cut: 10, depth: 2 },
+  { x: 57, y: 52, w: 26, h: 42, r: -1.2, tiltX: 4, tiltY: 5, cut: 6, depth: 3 },
+  { x: 5, y: 59, w: 19, h: 30, r: 1.6, tiltX: -2, tiltY: 7, cut: 12, depth: 1 },
+  { x: 29, y: 3, w: 17, h: 29, r: 0.8, tiltX: 3, tiltY: -5, cut: 8, depth: 1 },
+  { x: 84, y: 58, w: 14, h: 26, r: 2.1, tiltX: 2, tiltY: -8, cut: 11, depth: 1 },
+  { x: 27, y: 63, w: 20, h: 33, r: -1.7, tiltX: -3, tiltY: 5, cut: 6, depth: 2 },
+  { x: 62, y: 9, w: 12, h: 23, r: -0.9, tiltX: 4, tiltY: -4, cut: 10, depth: 1 }
+];
+
+const body = document.body;
+const galleryNode = document.querySelector("#works");
+const archiveNode = document.querySelector("#archive-grid");
 const filtersNode = document.querySelector("#filters");
-const worksNode = document.querySelector("#works");
 const resultCountNode = document.querySelector("#result-count");
 const lightbox = document.querySelector("#lightbox");
 const lightboxMedia = document.querySelector("#lightbox-media");
@@ -119,12 +132,51 @@ const lightboxTags = document.querySelector("#lightbox-tags");
 const closeButton = document.querySelector(".lightbox-close");
 const previousButton = document.querySelector(".lightbox-prev");
 const nextButton = document.querySelector(".lightbox-next");
+const introOverlay = document.querySelector("#cinematic-intro");
+const skipIntroButton = document.querySelector("#intro-skip");
+const replayIntroButton = document.querySelector("#replay-intro");
+const lightCanvas = document.querySelector("#light-canvas");
+const introCountCurrent = document.querySelector("#intro-count-current");
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 let activeCategory = "全部";
 let visibleWorks = [...works];
 let activeIndex = 0;
 let lastFocusedElement = null;
+let introStart = 0;
+let introActive = false;
+let introTimer = 0;
+let introCleanupTimer = 0;
+let lightRenderer = null;
+
+function renderGallery() {
+  galleryNode.innerHTML = works
+    .map((work, index) => {
+      const layout = galleryLayouts[index];
+      return `
+        <button
+          class="gallery-frame"
+          type="button"
+          data-work-id="${work.id}"
+          aria-label="打开作品：${work.title}"
+          style="--x:${layout.x};--y:${layout.y};--w:${layout.w};--h:${layout.h};--r:${layout.r}deg;--r-hover:${layout.r * 0.72}deg;--tilt-x:${layout.tiltX}deg;--tilt-y:${layout.tiltY}deg;--tilt-x-hover:${layout.tiltX * 0.72}deg;--tilt-y-hover:${layout.tiltY * 0.72}deg;--cut:${layout.cut}%;--depth:${layout.depth};--order:${index}"
+        >
+          <span class="frame-body">
+            <span class="frame-mat">
+              <img src="${work.cover}" alt="" loading="eager">
+              <span class="frame-reflection" aria-hidden="true"></span>
+            </span>
+            <span class="frame-plaque">
+              <span class="frame-index">${String(index + 1).padStart(2, "0")}</span>
+              <span class="frame-title">${work.title}</span>
+              <span class="frame-meta">${work.category} · ${work.year}</span>
+            </span>
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+}
 
 function renderFilters() {
   filtersNode.innerHTML = categories
@@ -143,70 +195,55 @@ function renderFilters() {
     .join("");
 }
 
-function renderWorks() {
+function renderArchive() {
   visibleWorks = works.filter((work) => activeCategory === "全部" || work.category === activeCategory);
-  resultCountNode.textContent = `${visibleWorks.length} 件作品`;
+  resultCountNode.textContent = `${String(visibleWorks.length).padStart(2, "0")} works`;
 
-  worksNode.innerHTML = visibleWorks
-    .map((work, index) => {
-      const typeLabel = work.type === "video" ? work.duration || "Video" : "Image";
-      const tagItems = work.tags.slice(0, 3).map((tag) => `<span>${tag}</span>`).join("");
-
-      return `
-        <button
-          class="work-card"
-          type="button"
-          data-index="${index}"
-          style="--order: ${index}"
-          aria-label="打开作品：${work.title}"
-        >
-          <img src="${work.cover}" alt="${work.title}" loading="lazy">
-          <span class="media-badge">${typeLabel}</span>
-          <span class="card-content">
-            <span class="card-row">
-              <span>${work.category}</span>
-              <span>${work.year}</span>
-            </span>
-            <span class="card-title">${work.title}</span>
-            <span class="card-tags" aria-hidden="true">${tagItems}</span>
+  archiveNode.innerHTML = visibleWorks
+    .map(
+      (work) => `
+        <button class="archive-card" type="button" data-work-id="${work.id}" aria-label="打开作品：${work.title}">
+          <img src="${work.cover}" alt="" loading="lazy">
+          <span class="archive-card-content">
+            <small>${work.category} / ${work.year}</small>
+            <strong>${work.title}</strong>
           </span>
         </button>
-      `;
-    })
+      `
+    )
     .join("");
-
-  hydrateWorkCards();
 }
 
 function updateCategory(category) {
   activeCategory = category;
-  worksNode.classList.add("is-filtering");
   renderFilters();
-  renderWorks();
-  window.setTimeout(() => worksNode.classList.remove("is-filtering"), 280);
+  renderArchive();
 }
 
-function openLightbox(index) {
+function findWorkIndex(id) {
+  return works.findIndex((work) => work.id === id);
+}
+
+function openLightboxById(id) {
+  const index = findWorkIndex(id);
+  if (index < 0) return;
   activeIndex = index;
   lastFocusedElement = document.activeElement;
   renderLightbox();
   lightbox.hidden = false;
-  document.body.classList.add("is-locked");
+  body.classList.add("is-locked");
   closeButton.focus();
 }
 
 function closeLightbox() {
   lightbox.hidden = true;
-  document.body.classList.remove("is-locked");
+  body.classList.remove("is-locked");
   lightboxMedia.innerHTML = "";
-
-  if (lastFocusedElement) {
-    lastFocusedElement.focus();
-  }
+  if (lastFocusedElement) lastFocusedElement.focus();
 }
 
 function renderLightbox() {
-  const work = visibleWorks[activeIndex];
+  const work = works[activeIndex];
   if (!work) return;
 
   lightboxTitle.textContent = work.title;
@@ -215,129 +252,320 @@ function renderLightbox() {
   lightboxTags.innerHTML = work.tags.map((tag) => `<li>${tag}</li>`).join("");
 
   if (work.type === "video" && work.videoSrc) {
-    lightboxMedia.innerHTML = `
-      <video src="${work.videoSrc}" poster="${work.cover}" controls autoplay playsinline></video>
-    `;
-    return;
-  }
-
-  if (work.type === "video") {
+    lightboxMedia.innerHTML = `<video src="${work.videoSrc}" poster="${work.cover}" controls autoplay playsinline></video>`;
+  } else if (work.type === "video") {
     lightboxMedia.innerHTML = `
       <div class="video-placeholder">
         <img src="${work.mediaSrc || work.cover}" alt="${work.title}">
         <span>视频文件待替换</span>
       </div>
     `;
-    return;
+  } else {
+    lightboxMedia.innerHTML = `<img src="${work.mediaSrc}" alt="${work.title}">`;
   }
-
-  lightboxMedia.innerHTML = `<img src="${work.mediaSrc}" alt="${work.title}">`;
 }
 
 function showPreviousWork() {
-  activeIndex = (activeIndex - 1 + visibleWorks.length) % visibleWorks.length;
+  activeIndex = (activeIndex - 1 + works.length) % works.length;
   renderLightbox();
 }
 
 function showNextWork() {
-  activeIndex = (activeIndex + 1) % visibleWorks.length;
+  activeIndex = (activeIndex + 1) % works.length;
   renderLightbox();
 }
 
-function setupReveals() {
-  const revealNodes = document.querySelectorAll(".reveal");
+function setIntroPhase(phase) {
+  body.classList.remove("intro-light", "intro-detail", "intro-title", "intro-gallery");
+  if (phase) body.classList.add(phase);
+  if (introCountCurrent) {
+    introCountCurrent.textContent = phase === "intro-detail" ? "02" : phase === "intro-title" || phase === "intro-gallery" ? "03" : "01";
+  }
+}
 
-  if (reducedMotionQuery.matches || !("IntersectionObserver" in window)) {
-    revealNodes.forEach((node) => node.classList.add("is-visible"));
+function completeIntro() {
+  introActive = false;
+  window.clearTimeout(introCleanupTimer);
+  body.classList.remove("intro-running", "intro-light", "intro-detail", "intro-title");
+  body.classList.add("intro-gallery", "intro-complete");
+  introOverlay.setAttribute("aria-hidden", "true");
+  skipIntroButton.tabIndex = -1;
+  introCleanupTimer = window.setTimeout(() => {
+    body.classList.remove("intro-gallery");
+  }, 1150);
+}
+
+function updateIntro(timestamp) {
+  if (!introActive) return;
+  if (!introStart) introStart = timestamp;
+  const elapsed = timestamp - introStart;
+
+  if (elapsed < 250) setIntroPhase("");
+  else if (elapsed < 2200) setIntroPhase("intro-light");
+  else if (elapsed < 3800) setIntroPhase("intro-detail");
+  else if (elapsed < 5800) setIntroPhase("intro-title");
+  else if (elapsed < 8200) setIntroPhase("intro-gallery");
+  else {
+    completeIntro();
     return;
   }
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
-  );
-
-  revealNodes.forEach((node) => observer.observe(node));
+  introTimer = window.requestAnimationFrame(updateIntro);
 }
 
-function hydrateWorkCards() {
-  const cards = worksNode.querySelectorAll(".work-card");
+function playIntro() {
+  window.cancelAnimationFrame(introTimer);
+  window.clearTimeout(introCleanupTimer);
+  introStart = 0;
+  introActive = true;
+  introOverlay.removeAttribute("aria-hidden");
+  skipIntroButton.tabIndex = 0;
+  body.classList.remove("intro-complete", "reduced-motion");
+  body.classList.add("intro-running");
+  setIntroPhase("");
+  window.scrollTo({ top: 0, behavior: "auto" });
+  introTimer = window.requestAnimationFrame(updateIntro);
+}
 
-  cards.forEach((card) => {
-    card.classList.add("is-visible");
+function setupGalleryParallax() {
+  if (reducedMotionQuery.matches || !window.matchMedia("(pointer: fine)").matches) return;
 
-    if (reducedMotionQuery.matches) return;
-
-    card.addEventListener("pointermove", (event) => {
-      const rect = card.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      const xPercent = (x / rect.width) * 100;
-      const yPercent = (y / rect.height) * 100;
-      const rotateY = ((x / rect.width) - 0.5) * 5;
-      const rotateX = ((0.5 - y / rect.height) * 5);
-
-      card.style.setProperty("--mx", `${xPercent}%`);
-      card.style.setProperty("--my", `${yPercent}%`);
-      card.style.setProperty("--tilt-x", `${rotateX.toFixed(2)}deg`);
-      card.style.setProperty("--tilt-y", `${rotateY.toFixed(2)}deg`);
-    });
-
-    card.addEventListener("pointerleave", () => {
-      card.style.setProperty("--tilt-x", "0deg");
-      card.style.setProperty("--tilt-y", "0deg");
-      card.style.setProperty("--mx", "50%");
-      card.style.setProperty("--my", "50%");
-    });
+  galleryNode.addEventListener("pointermove", (event) => {
+    const rect = galleryNode.getBoundingClientRect();
+    const x = Math.max(-1, Math.min(1, ((event.clientX - rect.left) / rect.width - 0.5) * 2));
+    const y = Math.max(-1, Math.min(1, ((event.clientY - rect.top) / rect.height - 0.5) * 2));
+    galleryNode.style.setProperty("--px", x.toFixed(3));
+    galleryNode.style.setProperty("--py", y.toFixed(3));
   });
+
+  galleryNode.addEventListener("pointerleave", () => {
+    galleryNode.style.setProperty("--px", "0");
+    galleryNode.style.setProperty("--py", "0");
+  });
+}
+
+function createShader(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    gl.deleteShader(shader);
+    return null;
+  }
+  return shader;
+}
+
+function initLightField() {
+  const gl = lightCanvas.getContext("webgl", {
+    alpha: true,
+    antialias: false,
+    depth: false,
+    powerPreference: "high-performance"
+  });
+
+  if (!gl) {
+    body.classList.add("no-webgl");
+    return null;
+  }
+
+  const vertexSource = `
+    attribute vec2 a_position;
+    void main() {
+      gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+  `;
+
+  const fragmentSource = `
+    precision highp float;
+    uniform vec2 u_resolution;
+    uniform vec2 u_pointer;
+    uniform float u_time;
+    uniform float u_strength;
+
+    float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
+    }
+
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                 mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+    }
+
+    void main() {
+      vec2 frag = gl_FragCoord.xy;
+      vec2 p = (frag - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
+      p.x += u_pointer.x * 0.035;
+      p.y -= u_pointer.y * 0.025;
+
+      float t = u_time * 0.16;
+      float angle = atan(p.y, p.x);
+      float radius = length(p * vec2(0.92, 1.06));
+      float contour = 0.285
+        + sin(angle * 3.0 + t) * 0.045
+        + sin(angle * 5.0 - t * 1.7) * 0.018
+        + (noise(p * 3.2 + t) - 0.5) * 0.06;
+
+      float bodyShape = 1.0 - smoothstep(contour - 0.08, contour + 0.018, radius);
+      float rim = exp(-abs(radius - contour) * 38.0);
+      float inner = 1.0 - smoothstep(0.02, contour, radius);
+
+      vec2 lightPosition = vec2(-0.32 + sin(t * 0.7) * 0.08, 0.29 + cos(t * 0.5) * 0.04);
+      float keyLight = pow(max(0.0, 1.0 - length(p - lightPosition)), 3.4);
+      float edgeLight = pow(max(0.0, dot(normalize(p + 0.0001), normalize(vec2(-0.78, 0.64)))), 9.0) * rim;
+      float specular = pow(max(0.0, 1.0 - length(p - vec2(-0.12, 0.1))), 13.0) * bodyShape;
+
+      float diagonalBeam = exp(-abs(p.x * 0.46 + p.y * 0.88 + 0.12) * 7.0);
+      diagonalBeam *= smoothstep(0.86, 0.05, length(p - vec2(-0.12, 0.08)));
+      float distantGlow = exp(-length(p - vec2(-0.42, 0.28)) * 3.8);
+
+      float sculpture = bodyShape * (0.025 + keyLight * 0.28 + inner * 0.035)
+        + rim * 0.2
+        + edgeLight * 1.05
+        + specular * 0.72;
+      float atmosphere = diagonalBeam * 0.08 + distantGlow * 0.045;
+      float vignette = smoothstep(0.88, 0.15, length(p));
+      float grain = (hash(frag + floor(u_time * 12.0)) - 0.5) * 0.018;
+      float value = (sculpture + atmosphere) * vignette * u_strength + grain;
+
+      vec3 tone = vec3(value * 0.92, value * 0.94, value);
+      gl_FragColor = vec4(tone, 1.0);
+    }
+  `;
+
+  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
+  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+  if (!vertexShader || !fragmentShader) {
+    body.classList.add("no-webgl");
+    return null;
+  }
+
+  const program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    body.classList.add("no-webgl");
+    return null;
+  }
+
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+  const position = gl.getAttribLocation(program, "a_position");
+  const resolution = gl.getUniformLocation(program, "u_resolution");
+  const pointer = gl.getUniformLocation(program, "u_pointer");
+  const time = gl.getUniformLocation(program, "u_time");
+  const strength = gl.getUniformLocation(program, "u_strength");
+  let pointerX = 0;
+  let pointerY = 0;
+  let animationFrame = 0;
+  let previousFrame = 0;
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const width = Math.max(1, Math.floor(window.innerWidth * dpr));
+    const height = Math.max(1, Math.floor(window.innerHeight * dpr));
+    if (lightCanvas.width !== width || lightCanvas.height !== height) {
+      lightCanvas.width = width;
+      lightCanvas.height = height;
+      gl.viewport(0, 0, width, height);
+    }
+  }
+
+  function draw(timestamp) {
+    animationFrame = window.requestAnimationFrame(draw);
+    if (document.hidden) return;
+
+    const minimumGap = introActive ? 16 : 32;
+    if (timestamp - previousFrame < minimumGap) return;
+    previousFrame = timestamp;
+    resize();
+
+    gl.useProgram(program);
+    gl.enableVertexAttribArray(position);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform2f(resolution, lightCanvas.width, lightCanvas.height);
+    gl.uniform2f(pointer, pointerX, pointerY);
+    gl.uniform1f(time, timestamp * 0.001);
+
+    let fieldStrength = 0.58;
+    if (introActive && introStart) {
+      const elapsed = timestamp - introStart;
+      if (elapsed < 250) fieldStrength = Math.max(0, elapsed / 250) * 0.3;
+      else if (elapsed < 2200) fieldStrength = 0.3 + ((elapsed - 250) / 1950) * 0.62;
+      else if (elapsed < 3800) fieldStrength = 0.92 + Math.sin((elapsed - 2200) / 1600 * Math.PI) * 0.08;
+      else if (elapsed < 5800) fieldStrength = 0.86;
+      else fieldStrength = Math.max(0.58, 0.86 - ((elapsed - 5800) / 2400) * 0.28);
+    }
+    gl.uniform1f(strength, fieldStrength);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+
+  if (!reducedMotionQuery.matches && window.matchMedia("(pointer: fine)").matches) {
+    window.addEventListener("pointermove", (event) => {
+      pointerX = (event.clientX / window.innerWidth - 0.5) * 2;
+      pointerY = (event.clientY / window.innerHeight - 0.5) * 2;
+    }, { passive: true });
+  }
+
+  animationFrame = window.requestAnimationFrame(draw);
+  return () => window.cancelAnimationFrame(animationFrame);
 }
 
 filtersNode.addEventListener("click", (event) => {
   const button = event.target.closest("[data-category]");
-  if (!button) return;
-  updateCategory(button.dataset.category);
+  if (button) updateCategory(button.dataset.category);
 });
 
-worksNode.addEventListener("click", (event) => {
-  const card = event.target.closest("[data-index]");
-  if (!card) return;
-  openLightbox(Number(card.dataset.index));
+galleryNode.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-work-id]");
+  if (card) openLightboxById(card.dataset.workId);
 });
 
+archiveNode.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-work-id]");
+  if (card) openLightboxById(card.dataset.workId);
+});
+
+skipIntroButton.addEventListener("click", completeIntro);
+replayIntroButton.addEventListener("click", playIntro);
 closeButton.addEventListener("click", closeLightbox);
 previousButton.addEventListener("click", showPreviousWork);
 nextButton.addEventListener("click", showNextWork);
 
 lightbox.addEventListener("click", (event) => {
-  if (event.target === lightbox) {
-    closeLightbox();
-  }
+  if (event.target === lightbox) closeLightbox();
 });
 
 window.addEventListener("keydown", (event) => {
+  if (introActive && event.key === "Escape") {
+    completeIntro();
+    return;
+  }
   if (lightbox.hidden) return;
-
-  if (event.key === "Escape") {
-    closeLightbox();
-  }
-
-  if (event.key === "ArrowLeft") {
-    showPreviousWork();
-  }
-
-  if (event.key === "ArrowRight") {
-    showNextWork();
-  }
+  if (event.key === "Escape") closeLightbox();
+  if (event.key === "ArrowLeft") showPreviousWork();
+  if (event.key === "ArrowRight") showNextWork();
 });
 
-document.body.classList.add("animations-ready");
-setupReveals();
+renderGallery();
 renderFilters();
-renderWorks();
+renderArchive();
+setupGalleryParallax();
+lightRenderer = initLightField();
+
+if (reducedMotionQuery.matches) {
+  body.classList.remove("intro-running");
+  body.classList.add("intro-complete", "reduced-motion");
+  introOverlay.setAttribute("aria-hidden", "true");
+  skipIntroButton.tabIndex = -1;
+} else {
+  playIntro();
+}

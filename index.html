@@ -3,83 +3,103 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>影像作品 | 个人博客</title>
+    <meta name="theme-color" content="#050505">
+    <title>影像作品 | 黑白光影画廊</title>
     <meta
       name="description"
-      content="个人博客作品栏，展示图片制作、视频制作、动态图形和后期合成作品。"
+      content="个人影像作品画廊，展示图片制作、视频制作、动态图形和后期合成作品。"
     >
     <link rel="icon" href="assets/favicon.png" type="image/png">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260629g">
   </head>
-  <body>
-    <div class="texture-layer" aria-hidden="true"></div>
-    <div class="gradual-blur gradual-blur-top" aria-hidden="true"></div>
-    <div class="gradual-blur gradual-blur-bottom" aria-hidden="true"></div>
+  <body class="intro-running">
+    <a class="skip-link" href="#gallery">跳到作品画廊</a>
 
-    <a class="skip-link" href="#works">跳到作品列表</a>
+    <canvas class="light-field" id="light-canvas" aria-hidden="true"></canvas>
+    <div class="light-fallback" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="film-grain" aria-hidden="true"></div>
 
-    <header class="site-header reveal">
-      <a class="brand" href="#" aria-label="个人博客首页">
-        <span class="brand-mark" aria-hidden="true"></span>
-        <span>个人博客</span>
+    <div class="cinematic-intro" id="cinematic-intro" aria-label="影像作品开场">
+      <button class="intro-skip" id="intro-skip" type="button">跳过开场</button>
+      <div class="intro-artwork" aria-hidden="true">
+        <figure class="sculpture-shot sculpture-wide">
+          <img src="assets/intro-plaster-gallery.png" alt="">
+        </figure>
+        <figure class="pottery-sketch-shot">
+          <img src="assets/intro-pottery-sketch.png" alt="">
+        </figure>
+        <div class="intro-light-sweep"></div>
+        <p class="intro-shot-label">Light study / Plaster / 01</p>
+      </div>
+      <div class="intro-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+      </div>
+      <div class="intro-copy">
+        <p class="intro-overline">Image · Motion · Process</p>
+        <h1>
+          <span>影像</span>
+          <span>作品</span>
+        </h1>
+        <div class="intro-rule" aria-hidden="true"></div>
+        <p class="intro-caption">A monochrome study of light, movement and form.</p>
+      </div>
+      <p class="intro-count" aria-hidden="true"><span id="intro-count-current">01</span> / 03</p>
+    </div>
+
+    <header class="site-header">
+      <a class="brand" href="#gallery" aria-label="影像作品首页">
+        <span>IMAGE / MOTION</span>
       </a>
       <nav class="site-nav" aria-label="主导航">
-        <a href="#works" aria-current="page">作品</a>
-        <a href="#recent">最近发文</a>
+        <a href="#gallery">画廊</a>
+        <a href="#archive">作品索引</a>
         <a href="#about">关于</a>
       </nav>
+      <button class="replay-button" id="replay-intro" type="button">重播开场</button>
     </header>
 
     <main>
-      <section class="intro reveal" aria-labelledby="page-title">
-        <div class="intro-copy">
-          <p class="eyebrow">Works / Image & Motion</p>
-          <h1 id="page-title">影像作品</h1>
-          <p class="intro-text">
-            收录图片制作、视频剪辑、动态图形和后期合成练习。页面先以示例内容搭建，
-            之后可以直接替换为真实作品素材。
-          </p>
+      <section class="gallery-hero" id="gallery" aria-labelledby="gallery-title">
+        <div class="gallery-heading">
+          <p>Selected works · 2025—2026</p>
+          <h2 id="gallery-title">光落下的地方，<br>作品开始显影。</h2>
+          <span>Scroll to explore</span>
         </div>
-        <dl class="intro-stats" aria-label="作品概览">
-          <div>
-            <dt>08</dt>
-            <dd>精选作品</dd>
-          </div>
-          <div>
-            <dt>04</dt>
-            <dd>创作方向</dd>
-          </div>
-          <div>
-            <dt>2026</dt>
-            <dd>持续更新</dd>
-          </div>
-        </dl>
+        <div class="gallery-stage" id="works" aria-label="精选作品画廊"></div>
+        <div class="gallery-footnote" aria-hidden="true">
+          <span>08 selected studies</span>
+          <span>Shanghai · CN</span>
+          <span>2026</span>
+        </div>
       </section>
 
-      <section class="work-section reveal" aria-labelledby="work-section-title">
-        <div class="section-head">
+      <section class="archive-section" id="archive" aria-labelledby="archive-title">
+        <div class="archive-head">
           <div>
-            <p class="section-kicker">Portfolio</p>
-            <h2 id="work-section-title">作品栏</h2>
+            <p class="section-kicker">Collection index</p>
+            <h2 id="archive-title">全部作品</h2>
           </div>
           <p id="result-count" class="result-count" aria-live="polite"></p>
         </div>
-
         <div class="filter-bar" id="filters" aria-label="作品分类"></div>
-
-        <div class="works-grid" id="works" aria-label="作品列表"></div>
+        <div class="archive-grid" id="archive-grid" aria-label="作品索引"></div>
       </section>
 
-      <section class="journal-preview reveal" id="recent" aria-labelledby="recent-title">
-        <p class="section-kicker">Journal</p>
-        <h2 id="recent-title">最近发文</h2>
-        <p>这里预留给博客文章更新。后续可以接入 Markdown、静态文章列表或 CMS。</p>
+      <section class="journal-preview" id="recent" aria-labelledby="recent-title">
+        <p class="section-kicker">Journal / Process</p>
+        <h2 id="recent-title">创作笔记即将展开。</h2>
+        <p>关于图像、剪辑、动态和后期过程的记录。</p>
       </section>
     </main>
 
-    <footer class="site-footer reveal" id="about">
-      <p>© 2026 个人博客</p>
-      <p>Image, motion, notes, and process.</p>
+    <footer class="site-footer" id="about">
+      <div>
+        <p class="footer-title">影像作品</p>
+        <p>Image, motion, notes, and process.</p>
+      </div>
+      <p>© 2026</p>
     </footer>
 
     <div
@@ -111,6 +131,6 @@
       </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=20260629f"></script>
   </body>
 </html>
